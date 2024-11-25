@@ -1,4 +1,6 @@
 import { experienciasofDB } from "../modelos/types_d_experiencias";
+import { usersofDB } from "../modelos/types_d_users";
+
 
 export const getEntries = {
     getAll: async()=>{
@@ -26,9 +28,28 @@ export const getEntries = {
     },
     update: async(id:string,body:object)=>{
         console.log(body);
-        return await experienciasofDB.findByIdAndUpdate(id,body,{$new:true});
+        return await experienciasofDB.findByIdAndUpdate(id, body, { new: true });
     },
     delete: async(id:string)=>{
         return await experienciasofDB.findByIdAndDelete(id);
+    },
+    getExperiencesByUsername: async (name: string) => {
+        console.log(`Searching experiences for user name: ${name}`);
+        const user = await usersofDB.findOne({ name });
+        if (!user) {
+            console.log('No user found with this name');
+            return [];
+        }
+        console.log(`User ID for name "${name}":`, user._id);
+        const experiences = await experienciasofDB.find({
+            $or: [
+                { owner: user._id },
+                { participants: user._id },
+            ],
+        })
+            .populate('owner', 'name')
+            .populate('participants', 'name');
+        console.log('Populated and filtered experiences:', experiences);
+        return experiences;
     }
 }
